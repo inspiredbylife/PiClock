@@ -22,6 +22,7 @@ import ApiKeys
 def tick():
     global hourpixmap, minpixmap, secpixmap
     global hourpixmap2, minpixmap2, secpixmap2
+    global digits
     global lastmin
     global clockrect
     global datex, datex2, datey2
@@ -44,8 +45,8 @@ def tick():
         ts.width(),
         ts.height()
     )
-    if now.minute != lastmin:
-        lastmin = now.minute
+        
+    if now.minute != lastmin and not Config.digitalclock:
         angle = now.minute * 6
         ts = minpixmap.size()
         minpixmap2 = minpixmap.transformed(
@@ -81,22 +82,29 @@ def tick():
             ts.width(),
             ts.height()
         )
-        # date
+    if Config.DateLocale != "":
+        sup = ""
+        try:
+            locale.setlocale(locale.LC_TIME, Config.DateLocale)
+        except:
+            pass
+         
+    if now.minute != lastmin and Config.digitalclock:
+        ds = "{0:%H:%M}".format(now)
+        digits.setText(ds)
+        
+    # date
+    if now.minute != lastmin:
         sup = 'th'
         if (now.day == 1 or now.day == 21 or now.day == 31): sup = 'st'
         if (now.day == 2 or now.day == 22): sup = 'nd'
         if (now.day == 3 or now.day == 23): sup = 'rd'
-        if Config.DateLocale != "":
-            sup = ""
-            try:
-                locale.setlocale(locale.LC_TIME, Config.DateLocale)
-            except:
-                pass 
         ds = "{0:%A %B} {0.day}<sup>".format(now)+sup+"</sup> {0.year}".format(now)
         datex.setText(ds)
         datex2.setText(ds)
         datey2.setText("{0:%I:%M %p}".format(now))
  
+    lastmin = now.minute
 
     
 def tempfinished():
@@ -598,6 +606,9 @@ except AttributeError: Config.wind_degrees = 0
 try: Config.satellite
 except AttributeError: Config.satellite = 0
 
+try: Config.digitalclock
+except AttributeError: Config.digitalclock = 0
+
 try: Config.LPressure
 except AttributeError:
     Config.wuLanguage = "EN"
@@ -681,26 +692,40 @@ clockface.setObjectName("clockface")
 clockrect = QtCore.QRect(width/2-height*.4, height*.45-height*.4,height * .8, height * .8)
 clockface.setGeometry(clockrect)
 clockface.setStyleSheet("#clockface { background-color: transparent; border-image: url("+Config.clockface+") 0 0 0 0 stretch stretch;}")
-
-hourhand = QtGui.QLabel(frame1)
-hourhand.setObjectName("hourhand")
-hourhand.setStyleSheet("#hourhand { background-color: transparent; }")
-
-minhand = QtGui.QLabel(frame1)
-minhand.setObjectName("minhand")
-minhand.setStyleSheet("#minhand { background-color: transparent; }")
-
 sechand = QtGui.QLabel(frame1)
 sechand.setObjectName("sechand")
 sechand.setStyleSheet("#sechand { background-color: transparent; }")
-
-hourpixmap = QtGui.QPixmap(Config.hourhand)
-hourpixmap2 = QtGui.QPixmap(Config.hourhand)
-minpixmap = QtGui.QPixmap(Config.minhand)
-minpixmap2 = QtGui.QPixmap(Config.minhand)
 secpixmap = QtGui.QPixmap(Config.sechand)
 secpixmap2 = QtGui.QPixmap(Config.sechand)
 
+if not Config.digitalclock:
+    
+    hourhand = QtGui.QLabel(frame1)
+    hourhand.setObjectName("hourhand")
+    hourhand.setStyleSheet("#hourhand { background-color: transparent; }")
+    
+    minhand = QtGui.QLabel(frame1)
+    minhand.setObjectName("minhand")
+    minhand.setStyleSheet("#minhand { background-color: transparent; }")
+    
+    
+    hourpixmap = QtGui.QPixmap(Config.hourhand)
+    hourpixmap2 = QtGui.QPixmap(Config.hourhand)
+    minpixmap = QtGui.QPixmap(Config.minhand)
+    minpixmap2 = QtGui.QPixmap(Config.minhand)
+else:
+    digits = QtGui.QLabel(clockface)
+    digits.setObjectName("digits")
+    digits.setStyleSheet("#digits { font-family:sans-serif; color: #fff; background-color: transparent; font-size: "+str(int(250*xscale))+"px; "+Config.fontattr+"}")
+    digits.setAlignment(Qt.AlignCenter);
+    digits.setGeometry(0,0,clockface.width(),clockface.height())
+    glow = QtGui.QGraphicsDropShadowEffect()
+    glow.setOffset(0)
+    glow.setBlurRadius(50)
+    glow.setColor(QColor("#bef"))
+    digits.setGraphicsEffect(glow) 
+   
+    
 radar1rect = QtCore.QRect(3*xscale, 344*yscale, 300*xscale, 275*yscale)
 objradar1 = Radar(frame1, Config.radar1, radar1rect, "radar1")
 

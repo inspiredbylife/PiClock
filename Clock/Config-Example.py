@@ -19,6 +19,7 @@ radar_refresh = 10      # minutes
 weather_refresh = 30    # minutes
 wind_degrees = 0        # Wind in degrees instead of cardinal 0 = cardinal, 1 = degrees
 satellite = 0           # show satellite image (clouds) instead of radar 0 = radar, 1 = satellite
+digitalclock = 0        # use a digital clock instead of the analog clock
 
 fontattr = ''   # gives all text additional attributes using QT style notation
                 # example: fontattr = 'font-weight: bold; '
