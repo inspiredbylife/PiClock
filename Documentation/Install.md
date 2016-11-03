@@ -157,6 +157,16 @@ Be sure the DRIVER line appears as follows
 DRIVER="default"
 ```
 
+Be sure the DEVICE line appears as follows
+```
+DEVICE="/dev/lirc0"
+```
+
+Be sure the MODULES line appears as follows
+```
+MODULES="lirc_rpi"
+```
+
 ### Get mpg123 (optional to play NOAA weather radio streams)
 
 (you must still be root [super user]) 
@@ -245,15 +255,20 @@ Weather Underground api keys are created at this link:
 http://www.wunderground.com/weather/api/ Here too, it'll ask you for an
 Application (maybe PiClock?) that you're using the api key with.
 
-A _Google Maps api key is not required_, unless you pull a large volume of maps.
-This *can* occur if you're continually pulling maps because you're restarting
+## Optional Google Maps API key
+
+A Google Maps api key is _not required_, unless you pull a large volume of maps.
+Most everyone can leave this key empty.  
+
+You only need a key if you're continually pulling maps because you're restarting
 the clock often durning development.   The maps are pulled once at the start.
 
 If you want a key, this is how its done. Google Maps api keys are created at this link:
 https://console.developers.google.com/flows/enableapi?apiid=maps_backend&keyType=CLIENT_SIDE
 You'll require a google user and password.  After that it'll require
 you create a "project" (maybe PiClock for a project name?)
-It will also ask about Client Ids, which you can skip (just clock ok/create)
+It will also ask about Client Ids, which you can skip (just clock ok/create).  You need to 
+then activate the key.
 
 
 
@@ -291,11 +306,13 @@ set up in python syntax.  The positioning of the {} and () and ','
 are not arbitrary.  If you're not familiar with python, use extra
 care not to disturb the format while changing the data.
 
-The first thing is to change the Latitudes and Longitudes you see to yours.
-They occur in several places. The first one in the file is where your weather
-forecast comes from.   The others are where your radar images are centered
+The first thing is to change the primary_coordinates to yours.  That is really
+all that is manditory.  Further customization of the radar maps can be done in
+the Radar section.  There you can customize where your radar images are centered
 and where the markers appear on those images.  Markers are those little red
-location pointers.
+location pointers.  Radar1 and 2 show on the first page, and 3 and 4 show on the
+second page of the display (here's a post of about that:
+https://www.facebook.com/permalink.php?story_fbid=1371576642857593&id=946361588712436&substory_index=0 )
 
 The second thing to change is your NOAA weather radio stream url.  You can
 find it here: http://www.wunderground.com/wxradio/
@@ -304,18 +321,26 @@ At this point, I'd not recommend many other changes until you have tested
 and gotten it running.
 
 ### Run it!
+You'll need to be on the desktop, in a terminal program.
 
 ```
 cd PiClock
-sh startup.sh
+sh startup.sh -n -s
 ```
-After about 45 seconds, your screen should be covered by the PiClock  YAY!
+Your screen should be covered by the PiClock  YAY!
 
-There may be some output on the terminal screen as startup.sh executes.
+There will be some output on the terminal screen as startup.sh executes.
 If everything works, it can be ignored.  If for some reason the clock
 doesn't work, or maps are missing, etc the output may give a reason
 or reasons, which usually reference something to do with the config
-file (Config.py)
+file (Config.py)  
+
+### Logs
+The -s option causes no log files to be created, but
+instead logs to your terminal screen.  If -s is omitted, logs are
+created in PiClock/Clock as PyQtPiClock.[1-7].log, which can also help
+you find issues.  -s is normally omitted when started from the desktop icon
+or from crontab.  Logs are then created for debugging auto starts.
 
 ### First Use
 
@@ -336,8 +361,22 @@ Give each number a name, like is shown in the examples in that file
 At this point the clock will only start when you manually start it, as
 described in the Run It section.
 
+Use only one autostart method.
+## Autostart Method 1
+(NOT as root)
+```
+cd PiClock
+chmod +x PiClock.desktop
+ln PiClock.desktop ~/Desktop
+mkdir ~/.config/autostart
+ln PiClock.desktop ~/.config/autostart
+```
+This puts the a PiClock icon on your desktop.  It also runs it when
+the desktop starts.
+
+## Autostart Method 2
 To have it auto start on boot we need to do one more thing, edit the
-crontab file as follows: (it will automatically start nano)
+crontab file as follows: (it will automatically start nano)  (NOT as root)
 ```
 crontab -e
 ```
@@ -351,19 +390,15 @@ and reboot to test
 sudo reboot
 ```
 
-### Setting the Pi to auto reboot every day
-This is optional but some may want their PiClock to reboot every day.  I do this with mine,
-but it is probably not needed.
-```
-sudo crontab -e
-```
-add the following line
-```
-22 3 * * * /sbin/reboot
-```
-save the file
+## Some notes about startup.sh
+startup.sh has a few options:
+* -n or --no-delay			Don't delay on starting the clock right away (default is 45 seconds delay)
+* -d X or --delay X			Delay X seconds before starting the clock
+* -m X or --message-delay X 	Delay X seconds while displaying a message on the desktop
 
-This sets the reboot to occur at 3:22am every day.   Adjust as needed.
+Startup also looks at the various optional PiClock items (Buttons, Temperature, NeoPixel, etc)
+and only starts those things that are configured to run.   It also checks if they are already
+running, and refrains from starting them again if they are.
 
 ### Switching skins at certain times of the day
 This is optional, but if its just too bright at night, a switcher script will kill and restart
@@ -385,6 +420,19 @@ Add lines similar to this:
 The 8 there means 8am, to switch to the normal config, and the 21 means switch to Config-Night at 9pm.
 More info on crontab can be found here: https://en.wikipedia.org/wiki/Cron
 
+### Setting the Pi to auto reboot every day
+This is optional but some may want their PiClock to reboot every day.  I do this with mine,
+but it is probably not needed.
+```
+sudo crontab -e
+```
+add the following line
+```
+22 3 * * * /sbin/reboot
+```
+save the file
+
+This sets the reboot to occur at 3:22am every day.   Adjust as needed.
 
 ### Updating to newer/updated versions
 Since we pulled the software from github originally, it can be updated
@@ -405,4 +453,11 @@ git reset --hard
 ```
 Backup your changes first!
 (This won't bother your Config.py nor ApiKeys.py because they are not tracked in git.
+
+Also, if you're using gpio-keys, you may need to remake it:
+```
+cd PiClock/Buttons
+rm gpio-keys
+make gpio-keys
+```
 
